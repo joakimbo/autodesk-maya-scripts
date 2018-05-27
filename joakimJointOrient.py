@@ -3,9 +3,9 @@
 # Created in May 2018
 # Autodesk Maya version: 2018.3
 #
-# credit to Micheal Comet at www.comet-cartoons.com
+# Credit to Micheal Comet at www.comet-cartoons.com
 # for his work on cometJointOrient which served as an
-# reference for the UI
+# reference for the UI layout.
 #
 
 # imports
