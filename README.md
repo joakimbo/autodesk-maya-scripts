@@ -1,1 +1,1 @@
-# Maya-scripts
+# Autodesk Maya scripts
