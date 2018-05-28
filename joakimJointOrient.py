@@ -81,6 +81,8 @@ def aimConstraintParentTowardsChild(parent, children, isLastChild):
         parent.jointOrient.set([0,0,0])
         aimCon = pm.aimConstraint(children[0], parent, aim = aimAxisVector, u = upAxisVector, wu = worldUpAxisVector)
         pm.aimConstraint(children, parent, edit = True, rm = True)
+        parent.jointOrient.set(parent.jointOrient.get()+parent.rotate.get())
+        parent.rotate.set(0.0,0.0,0.0)
     else:
         pm.parent(children, world = True)
         parent.jointOrient.set([0,0,0])
