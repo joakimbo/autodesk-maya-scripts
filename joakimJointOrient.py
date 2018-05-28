@@ -15,18 +15,30 @@ import pymel.core as pm
 # define functions
 def showHideLocalRotationAxis(val):
     selectedJoints = pm.ls(selection = True, type = 'joint')
-    for obj in selectedJoints:
-        obj.displayLocalAxis.set(val)
+    allJoints = selectedJoints
+    for joint in selectedJoints:
+        propToChildren = pm.checkBox(PropToChildrenBox, query = True, value = True)
+        if propToChildren:
+            descendents = pm.listRelatives(joint, allDescendents = True)
+            allJoints = allJoints + descendents
+
+    for joint in allJoints:
+        joint.displayLocalAxis.set(val)
 
 def setRotateToZero(*args):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
-        obj.rotate.set(0.0,0.0,0.0)
+        obj.rotate.set([0.0,0.0,0.0])
+
+def adjustJointOrientWithRotate(*args):
+    selectedJoints = pm.ls(selection = True, type = 'joint')
+    for obj in selectedJoints:
+        pm.makeIdentity(obj,apply = True, r = True, s = False, t = False)
 
 def setRotateAxisToZero(*args):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
-        obj.rotateAxis.set(0.0,0.0,0.0)
+        obj.rotateAxis.set([0.0,0.0,0.0])
 
 def setWorldUpAxis(xyz):
     if xyz == 'X':
@@ -157,13 +169,16 @@ with pm.window(title="joakimJointOrient 1.0.1", sizeable = False) as win:
                 with pm.rowLayout(numberOfColumns = 2):
                     showAxisBtn = pm.button(label='Show', width = 455/2)
                     hideAxisBtn = pm.button(label='Hide', width = 455/2)
+                with pm.columnLayout(columnWidth = 455, columnAttach = ('both', 5)):
+                    PropToChildrenBox = pm.checkBox(label = "Show/Hide children", value = True)
             with pm.frameLayout():
                 pm.separator(width = 450)
-                pm.text(label = "Set Rotate and/or Rotate Axis to 0")
+                pm.text(label = "Manipulate Rotate and Rotate Axis")
                 with pm.columnLayout(rowSpacing = 2):
-                    addRotToOrient = pm.button(label="Set rotate to 0", width = 455)
+                    setRotateToZeroBtn = pm.button(label="Set Rotate to 0", width = 455)
+                    adjustJointOrientWithRotateBtn = pm.button(label="Adjust Joint Orient with Rotate values", width = 455)
                     pm.separator(width = 455, height = 4, style = 'none')
-                    addRotAxisToOrient = pm.button(label="Set Rotate Axis to 0", width = 455)
+                    setRotateAxisToZeroBtn = pm.button(label="Set Rotate Axis to 0", width = 455)
             with pm.frameLayout():
                 pm.separator(width = 450)
                 pm.text(label = "Orient Joints")
@@ -216,8 +231,9 @@ with pm.window(title="joakimJointOrient 1.0.1", sizeable = False) as win:
 showAxisBtn.setCommand(pm.Callback(showHideLocalRotationAxis, 1))
 hideAxisBtn.setCommand(pm.Callback(showHideLocalRotationAxis, 0))
 
-addRotToOrient.setCommand(pm.Callback(setRotateToZero))
-addRotAxisToOrient.setCommand(pm.Callback(setRotateAxisToZero))
+setRotateToZeroBtn.setCommand(pm.Callback(setRotateToZero))
+adjustJointOrientWithRotateBtn.setCommand(pm.Callback(adjustJointOrientWithRotate))
+setRotateAxisToZeroBtn.setCommand(pm.Callback(setRotateAxisToZero))
 
 aimAxisXBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimX'))
 aimAxisYBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimY'))
