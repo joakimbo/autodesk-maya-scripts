@@ -18,16 +18,14 @@ def showHideLocalRotationAxis(val):
     for obj in selectedJoints:
         obj.displayLocalAxis.set(val)
 
-def addRotateToJointOrient(*args):
+def setRotateToZero(*args):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
-        obj.jointOrient.set(obj.jointOrient.get()+obj.rotate.get())
         obj.rotate.set(0.0,0.0,0.0)
 
-def addRotateAxisToJointOrient(*args):
+def setRotateAxisToZero(*args):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
-        obj.jointOrient.set(obj.jointOrient.get()+obj.rotateAxis.get())
         obj.rotateAxis.set(0.0,0.0,0.0)
 
 def setWorldUpAxis(xyz):
@@ -161,11 +159,11 @@ with pm.window(title="joakimJointOrient 1.0.1", sizeable = False) as win:
                     hideAxisBtn = pm.button(label='Hide', width = 455/2)
             with pm.frameLayout():
                 pm.separator(width = 450)
-                pm.text(label = "Fix Rotate and/or Rotate Axis values")
+                pm.text(label = "Set Rotate and/or Rotate Axis to 0")
                 with pm.columnLayout(rowSpacing = 2):
-                    addRotToOrient = pm.button(label="Fix Rotate values", width = 455)
+                    addRotToOrient = pm.button(label="Set rotate to 0", width = 455)
                     pm.separator(width = 455, height = 4, style = 'none')
-                    addRotAxisToOrient = pm.button(label="Fix Rotate Axis values", width = 455)
+                    addRotAxisToOrient = pm.button(label="Set Rotate Axis to 0", width = 455)
             with pm.frameLayout():
                 pm.separator(width = 450)
                 pm.text(label = "Orient Joints")
@@ -218,8 +216,8 @@ with pm.window(title="joakimJointOrient 1.0.1", sizeable = False) as win:
 showAxisBtn.setCommand(pm.Callback(showHideLocalRotationAxis, 1))
 hideAxisBtn.setCommand(pm.Callback(showHideLocalRotationAxis, 0))
 
-addRotToOrient.setCommand(pm.Callback(addRotateToJointOrient))
-addRotAxisToOrient.setCommand(pm.Callback(addRotateAxisToJointOrient))
+addRotToOrient.setCommand(pm.Callback(setRotateToZero))
+addRotAxisToOrient.setCommand(pm.Callback(setRotateAxisToZero))
 
 aimAxisXBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimX'))
 aimAxisYBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimY'))
