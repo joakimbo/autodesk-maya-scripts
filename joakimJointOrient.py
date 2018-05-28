@@ -1,5 +1,6 @@
 #
 # Author: Joakim Ö at https://github.com/joakimbo
+# Version: 1.0.1
 # Created in May 2018
 # Autodesk Maya version: 2018.3
 #
@@ -11,98 +12,23 @@
 # imports
 import pymel.core as pm
 
-# create template for UI
-template = pm.uiTemplate('jointOrientTemplate', force = True)
-template.define(pm.frameLayout, borderVisible = True, labelVisible = False, marginHeight = 2, marginWidth = 2, width = 455)
-template.define(pm.rowLayout, columnWidth5 = [455/5, 455/5, 455/5, 455/5, 455/5])
-
-# create window with template and ui elements
-with pm.window(title="joakimJointOrient", sizeable = False) as win:
-    with template:
-        with pm.columnLayout(rowSpacing = 5):
-            with pm.frameLayout():
-                pm.text(label = "Show or Hide Local Rotation Axes")
-                with pm.rowLayout(numberOfColumns = 2):
-                    showAxisBtn = pm.button(label="Show", width = 455/2)
-                    hideAxisBtn = pm.button(label="Hide", width = 455/2)
-            with pm.frameLayout():
-                pm.text(label = "Set or Add values to Joint Orient")
-                with pm.columnLayout(rowSpacing = 2):
-                    addRotToOrient = pm.button(label="Add Rotate values", width = 455)
-                    setRotToOrient = pm.button(label="Set Rotate values", width = 455)
-                    pm.separator(width = 455, height = 4, style = 'none')
-                    addRotAxisToOrient = pm.button(label="Add Rotate Axis values", width = 455)
-                    setRotAxisToOrient = pm.button(label="Set Rotate Axis values", width = 455)
-            with pm.frameLayout():
-                pm.text(label = "Orient Joints")
-                with pm.columnLayout():
-                    with pm.rowLayout(numberOfColumns = 5):
-                        pm.text(label = 'Aim Axis')
-                        aimAxisCollection = pm.radioCollection()
-                        pm.radioButton(label = "X", select = 1)
-                        pm.radioButton(label = "Y")
-                        pm.radioButton(label = "Z")
-                        aimAxisIsNegativeBox = pm.checkBox(label = "Is negative")
-                    with pm.rowLayout(numberOfColumns = 5):
-                        pm.text(label = 'Up Axis')
-                        upAxisCollection = pm.radioCollection()
-                        pm.radioButton(label = "X")
-                        pm.radioButton(label = "Y", select = 1)
-                        pm.radioButton(label = "Z")
-                        upAxisIsNegativeBox = pm.checkBox(label = "Is negative")
-                    with pm.rowLayout(numberOfColumns = 4):
-                        worldUpAxisField = pm.floatFieldGrp(label = "World Up Axis",numberOfFields = 3, value1 = 0.00, value2 = 1.00, value3 = 0.00, precision = 2)
-                        setWorldUpXBtn = pm.button(label="X")
-                        setWorldUpYBtn = pm.button(label="Y")
-                        setWorldUpZBtn = pm.button(label="Z")
-                    with pm.rowLayout(numberOfColumns = 1):
-                        orientJointsBtn = pm.button(label = "Orient Joints", width = 455)
-            with pm.frameLayout():
-                pm.text(label = "Add or Substract from Joint Orient")
-                with pm.columnLayout():
-                    with pm.rowLayout(numberOfColumns = 2):
-                        floatField = pm.floatFieldGrp(numberOfFields = 3, value1 = 0.00, value2 = 0.00, value3 = 0.00, precision = 2)
-                        setTweakValuesToZeroBtn = pm.button(label = "Set to 0")
-                    with pm.rowLayout(numberOfColumns = 2):
-                        addToJointOrientBtn = pm.button(label="Add", width = 455/2)
-                        subtractFromJointOrientBtn = pm.button(label="Subtract", width = 455/2)
-    with pm.columnLayout(columnAttach = ('both', 5), columnWidth = 450):
-        pm.separator()
-        pm.separator(style='none', height = 10)
-        pm.text(label = "By Joakim Ö")
-        pm.separator(style='none', height = 10)
-
-
 # define functions
 def showHideLocalRotationAxis(val):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
         obj.displayLocalAxis.set(val)
 
-
-def setRotateToJointOrient(*args):
-    selectedJoints = pm.ls(selection = True, type = 'joint')
-    for obj in selectedJoints:
-        print obj.jointOrient.set(obj.rotate.get())
-        print obj.rotate.set(0.0,0.0,0.0)
-
 def addRotateToJointOrient(*args):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
         obj.jointOrient.set(obj.jointOrient.get()+obj.rotate.get())
-        print obj.rotate.set(0.0,0.0,0.0)
-
-def setRotateAxisToJointOrient(*args):
-    selectedJoints = pm.ls(selection = True, type = 'joint')
-    for obj in selectedJoints:
-        print obj.jointOrient.set(obj.rotateAxis.get())
-        print obj.rotate.set(0.0,0.0,0.0)
+        obj.rotate.set(0.0,0.0,0.0)
 
 def addRotateAxisToJointOrient(*args):
     selectedJoints = pm.ls(selection = True, type = 'joint')
     for obj in selectedJoints:
         obj.jointOrient.set(obj.jointOrient.get()+obj.rotateAxis.get())
-        print obj.rotate.set(0.0,0.0,0.0)
+        obj.rotateAxis.set(0.0,0.0,0.0)
 
 def setWorldUpAxis(xyz):
     if xyz == 'X':
@@ -112,7 +38,8 @@ def setWorldUpAxis(xyz):
     elif xyz == 'Z':
         worldUpAxisField.setValue((0.0,0.0,1.0,0.0))
 
-def aimConstraintParentTowardsChild(parent, child, isLastChild):
+def aimConstraintParentTowardsChild(parent, children, isLastChild):
+
     # Set AIM axis
     aimAxisLabel = pm.radioButton(pm.radioCollection(aimAxisCollection, query = True, select = True),query = True, label = True)
     aimAxisIsNegative = pm.checkBox(aimAxisIsNegativeBox, query = True, value = True)
@@ -151,32 +78,40 @@ def aimConstraintParentTowardsChild(parent, child, isLastChild):
     worldUpAxisVector = worldUpAxisField.getValue()
 
     if isLastChild:
-        aimCon = pm.aimConstraint(child, parent, aim = aimAxisVector, u = upAxisVector, wu = worldUpAxisVector)
-        pm.delete(aimCon)
+        parent.jointOrient.set([0,0,0])
+        aimCon = pm.aimConstraint(children[0], parent, aim = aimAxisVector, u = upAxisVector, wu = worldUpAxisVector)
+        pm.aimConstraint(children, parent, edit = True, rm = True)
     else:
-        pm.parent(child, world = True)
-        aimCon = pm.aimConstraint(child, parent, aim = aimAxisVector, u = upAxisVector, wu = worldUpAxisVector)
-        pm.delete(aimCon)
-        print child
-        print parent
-        pm.parent(child, parent)
+        pm.parent(children, world = True)
+        parent.jointOrient.set([0,0,0])
+        orientChildrenLabel = pm.radioButton(pm.radioCollection(orientChildrenTowardsCollection, query = True, select = True), query = True, label = True)
+        if orientChildrenLabel == "Orient Parent towards average of child positions":
+            aimCon = pm.aimConstraint(children, parent, aim = aimAxisVector, u = upAxisVector, wu = worldUpAxisVector)
+        elif orientChildrenLabel == "Orient Parent towards first child position":
+            aimCon = pm.aimConstraint(children[0], parent, aim = aimAxisVector, u = upAxisVector, wu = worldUpAxisVector)
+        pm.aimConstraint(children, parent, edit = True, rm = True)
+        parent.jointOrient.set(parent.jointOrient.get()+parent.rotate.get())
+        parent.rotate.set(0.0,0.0,0.0)
+        pm.parent(children, parent)
 
 def orientJoints(*args):
-    parentJoint = pm.ls(selection = True, tail = 1, type = 'joint')
+    selectedJoints = pm.ls(selection = True, type = 'joint')
     allJoints = []
-    allJoints.append(parentJoint[0])
-    if parentJoint:
-        allDescendents = list(reversed(pm.listRelatives(parentJoint, allDescendents = True)))
-        allJoints = allJoints + allDescendents
+    orientDescendents = pm.checkBox(orientChildrenBox, query = True, value = True)
+    for joint in selectedJoints:
+        allJoints.append(joint)
+        if orientDescendents:
+            descendents = pm.listRelatives(joint, allDescendents = True)
+            allJoints = allJoints + descendents
 
-        for joint in allJoints:
-            allChildren = list(reversed(pm.listRelatives(joint, children = True)))
-            if len(allChildren) == 0:
-                aimConstraintParentTowardsChild(joint, pm.listRelatives(joint, parent = True)[0], True)
-            elif len(allChildren) == 1:
-                aimConstraintParentTowardsChild(joint, allChildren[0], False)
-            elif len(allChildren) > 1:
-                aimConstraintParentTowardsChild(joint, allChildren, False)
+    for joint in allJoints:
+        allChildren = list(reversed(pm.listRelatives(joint, children = True)))
+        if len(allChildren) == 0:
+            aimConstraintParentTowardsChild(joint, pm.listRelatives(joint, parent = True), True)
+        elif len(allChildren) >= 1:
+            aimConstraintParentTowardsChild(joint, allChildren, False)
+
+    pm.select(selectedJoints, r = True)
 
 
 def setTweakToZero(*args):
@@ -192,14 +127,104 @@ def subFromJointOrient(*args):
     for obj in selectedJoints:
         obj.jointOrient.set(obj.jointOrient.get()-floatField.getValue())
 
+def adjustAimUpAxisOnChange(aimDirStr):
+    aimDirLabel = pm.radioButton(pm.radioCollection(aimAxisCollection, query = True, select = True), query = True, label = True)
+    upDirLabel = pm.radioButton(pm.radioCollection(upAxisCollection, query = True, select = True), query = True, label = True)
+    if aimDirStr == 'aimX' and upDirLabel == 'X':
+        pm.radioButton(upAxisYBtn, edit = True, select = True)
+    elif aimDirStr == 'aimY' and upDirLabel == 'Y':
+        pm.radioButton(upAxisZBtn, edit = True, select = True)
+    elif aimDirStr == 'aimZ' and upDirLabel == 'Z':
+        pm.radioButton(upAxisXBtn, edit = True, select = True)
+    elif aimDirStr == 'upX' and aimDirLabel == 'X':
+        pm.radioButton(aimAxisYBtn, edit = True, select = True)
+    elif aimDirStr == 'upY' and aimDirLabel == 'Y':
+        pm.radioButton(aimAxisZBtn, edit = True, select = True)
+    elif aimDirStr == 'upZ' and aimDirLabel == 'Z':
+        pm.radioButton(aimAxisXBtn, edit = True, select = True)
+
+# create template for UI
+template = pm.uiTemplate('jointOrientTemplate', force = True)
+template.define(pm.frameLayout, labelVisible = False, marginHeight = 2, marginWidth = 2, width = 455)
+template.define(pm.rowLayout, columnWidth5 = [455/5, 455/5, 455/5, 455/5, 455/5])
+
+# create window with template and ui elements
+with pm.window(title="joakimJointOrient 1.0.1", sizeable = False) as win:
+    with template:
+        with pm.columnLayout(rowSpacing = 5):
+            with pm.frameLayout():
+                pm.text(label = "Show or Hide Local Rotation Axes")
+                with pm.rowLayout(numberOfColumns = 2):
+                    showAxisBtn = pm.button(label='Show', width = 455/2)
+                    hideAxisBtn = pm.button(label='Hide', width = 455/2)
+            with pm.frameLayout():
+                pm.separator(width = 450)
+                pm.text(label = "Fix Rotate and/or Rotate Axis values")
+                with pm.columnLayout(rowSpacing = 2):
+                    addRotToOrient = pm.button(label="Fix Rotate values", width = 455)
+                    pm.separator(width = 455, height = 4, style = 'none')
+                    addRotAxisToOrient = pm.button(label="Fix Rotate Axis values", width = 455)
+            with pm.frameLayout():
+                pm.separator(width = 450)
+                pm.text(label = "Orient Joints")
+                with pm.columnLayout():
+                    with pm.rowLayout(numberOfColumns = 5):
+                        pm.text(label = "Aim Axis")
+                        aimAxisCollection = pm.radioCollection()
+                        aimAxisXBtn = pm.radioButton(label = 'X', select = 1)
+                        aimAxisYBtn = pm.radioButton(label = 'Y')
+                        aimAxisZBtn = pm.radioButton(label = 'Z')
+                        aimAxisIsNegativeBox = pm.checkBox(label = "Is negative")
+                    with pm.rowLayout(numberOfColumns = 5):
+                        pm.text(label = "Up Axis")
+                        upAxisCollection = pm.radioCollection()
+                        upAxisXBtn = pm.radioButton(label = 'X')
+                        upAxisYBtn = pm.radioButton(label = 'Y', select = 1)
+                        upAxisZBtn = pm.radioButton(label = 'Z')
+                        upAxisIsNegativeBox = pm.checkBox(label = "Is negative")
+                    with pm.rowLayout(numberOfColumns = 4):
+                        worldUpAxisField = pm.floatFieldGrp(label = "World Up Axis",numberOfFields = 3, value1 = 0.00, value2 = 1.00, value3 = 0.00, precision = 2)
+                        setWorldUpXBtn = pm.button(label='X')
+                        setWorldUpYBtn = pm.button(label='Y')
+                        setWorldUpZBtn = pm.button(label='Z')
+                    with pm.columnLayout(columnWidth = 455, columnAttach = ('both', 5)):
+                        orientChildrenBox = pm.checkBox(label = "Orient children of selected joints", value = True)
+                        pm.text(label = "If joint has several children", height = 20, align = 'left')
+                        orientChildrenTowardsCollection = pm.radioCollection()
+                        pm.radioButton(label = "Orient Parent towards average of child positions", select = 1)
+                        pm.radioButton(label = "Orient Parent towards first child position")
+                    with pm.rowLayout(numberOfColumns = 1):
+                        orientJointsBtn = pm.button(label = "Orient Joints", width = 455)
+
+            with pm.frameLayout():
+                pm.separator(width = 450)
+                pm.text(label = "Add or Substract from Joint Orient")
+                with pm.columnLayout():
+                    with pm.rowLayout(numberOfColumns = 2):
+                        floatField = pm.floatFieldGrp(numberOfFields = 3, value1 = 0.00, value2 = 0.00, value3 = 0.00, precision = 2)
+                        setTweakValuesToZeroBtn = pm.button(label = "Set to 0")
+                    with pm.rowLayout(numberOfColumns = 2):
+                        addToJointOrientBtn = pm.button(label='Add', width = 455/2)
+                        subtractFromJointOrientBtn = pm.button(label='Subtract', width = 455/2)
+    with pm.columnLayout():
+        pm.separator(width = 455)
+        pm.separator(style='none', height = 10)
+        pm.text(label = "By Joakim Ö", width = 455)
+        pm.separator(style='none', height = 10)
+
 # Set Callbacks
 showAxisBtn.setCommand(pm.Callback(showHideLocalRotationAxis, 1))
 hideAxisBtn.setCommand(pm.Callback(showHideLocalRotationAxis, 0))
 
-setRotToOrient.setCommand(pm.Callback(setRotateToJointOrient))
 addRotToOrient.setCommand(pm.Callback(addRotateToJointOrient))
-setRotAxisToOrient.setCommand(pm.Callback(setRotateAxisToJointOrient))
 addRotAxisToOrient.setCommand(pm.Callback(addRotateAxisToJointOrient))
+
+aimAxisXBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimX'))
+aimAxisYBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimY'))
+aimAxisZBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'aimZ'))
+upAxisXBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'upX'))
+upAxisYBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'upY'))
+upAxisZBtn.onCommand(pm.Callback(adjustAimUpAxisOnChange,'upZ'))
 
 setWorldUpXBtn.setCommand(pm.Callback(setWorldUpAxis, 'X'))
 setWorldUpYBtn.setCommand(pm.Callback(setWorldUpAxis, 'Y'))
